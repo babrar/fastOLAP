@@ -2,7 +2,7 @@
 
 TL;DR - A fork of [AWS Athena](https://aws.amazon.com/athena/?whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc) (and more) for on-prem deployments.
 
-This project is one-click deployable data warehouse that is designed for analyzing data in AWS S3 using standard SQL. It also includes a self-hosted instance of [Redash](https://redash.io/) for quick data visualizations. The data stack has been optimized for OLAP query peformance and performs best when data is stored in [parquet](https://parquet.apache.org) format.
+This project is one-click deployable data stack that is designed for analyzing data in AWS S3 using standard SQL. It also includes a self-hosted instance of [Redash](https://redash.io/) for quick data visualizations. The data stack has been optimized for OLAP query peformance and performs best when data is stored in [parquet](https://parquet.apache.org) format.
 
 The configuration provided in this project will enable:
 
