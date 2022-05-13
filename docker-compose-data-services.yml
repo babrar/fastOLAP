@@ -1,0 +1,129 @@
+version: "3.5"
+x-redash-service: &redash-service
+  build:
+    context: ./redash
+  image: redash/redash:7.0.0.b18042
+  depends_on:
+    - redash-postgres
+    - redash-redis
+  env_file: ./redash/env
+  restart: always
+  networks:
+    redash:
+    hive:
+services:
+  hive-metastore-postgres:
+    build:
+      context: ./hive/hive-metastore-postgres
+      args:
+        - HIVE_USER_PASSWORD=${HIVE_USER_PASSWORD}
+        - HIVE_USER_NAME=${HIVE_USER_NAME}
+    container_name: hive-metastore-postgres-container
+    hostname: postgres-for-hive-metastore.docker-hive-net 
+    networks:
+      hive:
+        aliases:
+          - postgres-for-hive-metastore.docker-hive-net
+  hive-metastore-service:
+    build:
+      context: ./hive/hive-metastore-service
+      args:
+        - AWS_S3_ACCESS_KEY=${AWS_S3_ACCESS_KEY}
+        - AWS_S3_SECRET_KEY=${AWS_S3_SECRET_KEY}
+        - AWS_S3_BUCKET_URI=${AWS_S3_BUCKET_URI}
+        - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+        - HIVE_USER_NAME=${HIVE_USER_NAME}
+        - HIVE_USER_PASSWORD=${HIVE_USER_PASSWORD}
+        - HIVE_WAREHOUSE_FOLDER=${HIVE_WAREHOUSE_FOLDER}
+    container_name: hive-metastore-service-container
+    hostname: hive-metastore-service.docker-hive-net
+    depends_on:
+      - "hive-metastore-postgres"
+    networks:
+      hive:
+        aliases:
+          - hive-metastore-service.docker-hive-net
+  presto-coordinator:
+    build:
+      context: ./presto
+      args:
+        - INCLUDE_COORDINATOR_NODE_PROVIDED=true
+        - INCLUDE_WORKER_NODE_PROVIDED=false
+        - AWS_S3_ACCESS_KEY=${AWS_S3_ACCESS_KEY}
+        - AWS_S3_SECRET_KEY=${AWS_S3_SECRET_KEY}
+        - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+    container_name: presto-coordinator-container
+    hostname: presto-coordinator.docker-hive-net
+    depends_on:
+      - "hive-metastore-service"
+    ports:
+      - "4443:4443"
+    networks:
+      hive:
+        aliases:
+          - presto-coordinator.docker-hive-net    
+  presto-worker:
+    build:
+      context: ./presto
+      args:
+        - INCLUDE_COORDINATOR_NODE_PROVIDED=false
+        - INCLUDE_WORKER_NODE_PROVIDED=true
+        - AWS_S3_ACCESS_KEY=${AWS_S3_ACCESS_KEY}
+        - AWS_S3_SECRET_KEY=${AWS_S3_SECRET_KEY}
+        - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+    container_name: presto-worker-container
+    hostname: presto-worker.docker-hive-net
+    depends_on: 
+      - "presto-coordinator"
+    networks:
+      hive:
+  redash-server:
+    <<: *redash-service
+    command: server
+    ports:
+      - "5000:5000"
+    environment:
+      REDASH_WEB_WORKERS: 4
+  redash-scheduler:
+    <<: *redash-service
+    command: scheduler
+    environment:
+      QUEUES: "celery"
+      WORKERS_COUNT: 1
+  redash-scheduled-worker:
+    <<: *redash-service
+    command: worker
+    environment:
+      QUEUES: "scheduled_queries,schemas"
+      WORKERS_COUNT: 1
+  redash-adhoc-worker:
+    <<: *redash-service
+    command: worker
+    environment:
+      QUEUES: "queries"
+      WORKERS_COUNT: 2
+  redash-redis:
+    image: redis:5.0-alpine
+    restart: always
+    networks:
+      redash:
+        aliases:
+          - redash-redis.docker-redash-net
+  redash-postgres:
+    image: postgres:9.5-alpine
+    env_file: ./redash/env
+    volumes:
+      - ./redash/postgres-data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      redash:
+        aliases:
+          - redash-postgres.docker-redash-net
+
+networks:
+  hive:
+    name: docker-hive-net
+    driver: bridge
+  redash:
+    name: docker-redash-net
+    driver: bridge

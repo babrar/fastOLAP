@@ -1,0 +1,13 @@
+copy over all config to container (unchanged)
+
+test xor in Dockefile. At any given time, only one of coordinator/worker options will be set to true
+
+if coordinator
+	copy configs from coordinator subdir
+	run presto
+
+if worker
+	copy configs from worker subdir
+	check for coordinator health
+	run presto?
+
