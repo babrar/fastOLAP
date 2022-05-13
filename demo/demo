@@ -1,0 +1,60 @@
+# Beeline hiveserver2 JDBC connection string
+!connect jdbc:hive2://
+
+# List processes listening on ports
+sudo lsof -i -P -n | grep LISTEN
+
+# insert row into parquet table
+insert into table <table_name> values ('2019-03-27', '19.99', '19.99', 19.99, 19.99, 6875);
+# Create parquet table
+create table pstock (datetime string,
+open float,
+high float,
+low float,
+close float,
+value int) stored as parquet;
+
+# Sample textfile table 
+create table stock (datetime string,
+open float,
+high float,
+low float,
+close float,
+value int) row format delimited fields terminated by ',' stored as textfile;
+
+# Test: load csv directly to parquet <-- invalid. Files provided will need to be parquet formatted
+create table pstock2 (datetime string,
+open float,
+high float,
+low float,
+close float,
+value int) row format delimited fields terminated by ',' stored as parquet;
+
+# Drop table
+DROP TABLE pstock2
+
+# Reset table to empty state
+truncate table <table_name>;
+
+# Load data from file into table
+load data local inpath '/home/babrar/Desktop/CSV.csv' overwrite into table <table_name>;
+
+##############################
+# LARGE TABLE OPERATIONS TEST
+##############################
+
+create table sales ( region string,
+country string,
+item_type string,
+sales_channel string,
+order_priority string,
+order_date date,
+order_id bigint,
+ship_date date,
+units_sold int,
+unit_price float,
+unit_cost float,
+total_revenue float,
+total_cost float,
+total_profit float) row format delimited fields terminated by ',' stored as textfile;
+

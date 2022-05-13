@@ -1,0 +1,46 @@
+####### HIVE ##############
+
+- Setup remote hive metstore using postgres. https://mapr.com/docs/60/Hive/Config-RemotePostgreSQLForHiveMetastore.html
+- placed hive-site.xml in hadoop_home/etc/hadoop to import psql settings
+- ran schematool with dbType = postgres
+- command to start hive metastore: hive --service metastore &
+- Updated fs.defaultFS to s3n://$BUCKET_NAME in core-site.xml
+- Updated core-site.xml with fields from https://stackoverflow.com/questions/28029134/how-can-i-access-s3-s3n-from-a-local-hadoop-2-6-installation\?noredirect\=1\&lq\=1
+- Imported aws module into Hadoop classpath by following the fix in the SO thread above. In hadoop-env.sh -->  HADOOP_CLASSPATH=$HADOOP_CLASSPATH:$HADOOP_HOME/share/hadoop/tools/lib/*
+- Changed s3n to s3a for authentication error. Property names for s3a slightly different than those of s3n. https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-common/core-default.xml
+- Added V4 signing to s3a api: export HADOOP_OPTS="$HADOOP_OPTS -Dcom.amazonaws.services.s3.enableV4"
+- Launched HiveServer2 for remote query execution: hive --service hiveserver2
+- apt install postgres-jdbc && sudo ln -s usr/share/lib/postgresql-jdbc4.jar $HIVE_HOME/lib/postgres-jdbc.jar
+
+- Might have added a jar somewhere. Didn't document it..urgh.....!!
+	- Found 2 jars downloaded under the following directories : 
+		/home/babrar/Desktop/apache-hive-2.1.0-bin/jdbc/hive-jdbc-2.1.0-standalone.jar
+		/home/babrar/Desktop/apache-hive-2.1.0-bin/lib/hive-jdbc-2.1.0-standalone.jar
+	- SO thread: http://central.maven.org/maven2/org/apache/hive/hive-jdbc/2.0.0/hive-jdbc-2.0.0.jar
+- Connected to running  Hiverserver2 using Beeline: !connect jdbc:hive2://
+	- More appropriately, this command also works (from Ranger 0.5.0 guide): beeline -u "jdbc:hive2://localhost:10000" -n hive -p hive ;
+	  where 10000 is specified by hive.server2.thrift.port property
+
+####### RANGER ##########
+- Set hive.version to 2.1.0 in Ranger's pom.xml and added hive-jdbc-standalone-2.1.0 following https://stackoverflow.com/a/30497176/8702546
+- Installed ranger locally:
+	export MAVEN_OPTS="-Xmx2048M" && mvn clean compile package assembly:assembly install -U -DskipTests
+- Added hardcoded JAVA_HOME path to ranger-admin setup.sh
+- From psql console: changed Postgres root user "postgres" password corresponding to the value of "db_root_password" in install.properties.
+	- sudo -u postgres psql
+	- \password postgres
+
+[Optional but recommended: Installer automatically creates admin roles and ranger db if not found. But if they already exist, then make sure their crendentials match in install.properties]
+- Setup ranger db and rangeradmin role in Postgres.
+	- CREATE DATABASE ranger;
+	- CREATE USER rangeradmin WITH PASSWORD 'security';
+	- GRANT ALL PRIVILEGES ON DATABASE ranger to rangeradmin;
+
+
+# Edited /etc/postgresql/9.6/main/pg_hba.conf to include changes from https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.3.2/bk_Ranger_Install_Guide/content/configuring_postgresql_for_ranger.html
+- Changed JAVA_BIN and JAVA_VERSION in install.properties for ranger-admin
+- Change listen_addresses to '*' in postgresql.conf
+
+####### KNOX ############
+- Mapped 127.0.0.1 to www.local.com in /etc/hosts
+- Added ui.xml for Ranger and Ranger UI
