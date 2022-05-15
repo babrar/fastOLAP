@@ -6,8 +6,7 @@ This project is one-click deployable data stack that is designed for analyzing d
 
 The configuration provided in this project will enable:
 
-- Setting up a cloud-based data centralized warehouse (via S3)
-- Low latency data retrieval from the data warehouse (via Presto + Hive Connector)
+- Low latency data retrieval from the S3 datastore (via **Presto** + **Hive** Connector)
 - Creation of visual analytics directly from SQL queries (via Redash)
 - Query authorization with row-filtering feature (via Ranger) \*\*
 
