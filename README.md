@@ -1,4 +1,4 @@
-# Data stack with analytics frontend for fast SQL queries on S3
+# Data stack + analytics frontend for fast SQL queries on S3
 
 TL;DR - A fork of [AWS Athena](https://aws.amazon.com/athena/?whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc) (and more) for on-prem deployments.
 
